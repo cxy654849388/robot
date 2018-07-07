@@ -17,14 +17,38 @@ import java.util.*;
 
 public class Receiver {
 
-    private static List<Friend> friendList = new ArrayList<>();                 //好友列表
-    private static List<Group> groupList = new ArrayList<>();                   //群列表
-    private static List<Discuss> discussList = new ArrayList<>();               //讨论组列表
-    private static Map<Long, Friend> friendFromID = new HashMap<>();            //好友id到好友映射
-    private static Map<Long, Group> groupFromID = new HashMap<>();              //群id到群映射
-    private static Map<Long, GroupInfo> groupInfoFromID = new HashMap<>();      //群id到群详情映射
-    private static Map<Long, Discuss> discussFromID = new HashMap<>();          //讨论组id到讨论组映射
-    private static Map<Long, DiscussInfo> discussInfoFromID = new HashMap<>();  //讨论组id到讨论组详情映射
+    /**
+     * 好友列表
+     */
+    private static List<Friend> friendList = new ArrayList<>();
+    /**
+     * 群列表
+     */
+    private static List<Group> groupList = new ArrayList<>();
+    /**
+     * 讨论组列表
+     */
+    private static List<Discuss> discussList = new ArrayList<>();
+    /**
+     * 好友id到好友映射
+     */
+    private static Map<Long, Friend> friendFromID = new HashMap<>();
+    /**
+     * 群id到群映射
+     */
+    private static Map<Long, Group> groupFromID = new HashMap<>();
+    /**
+     * 群id到群详情映射
+     */
+    private static Map<Long, GroupInfo> groupInfoFromID = new HashMap<>();
+    /**
+     * 讨论组id到讨论组映射
+     */
+    private static Map<Long, Discuss> discussFromID = new HashMap<>();
+    /**
+     * 讨论组id到讨论组详情映射
+     */
+    private static Map<Long, DiscussInfo> discussInfoFromID = new HashMap<>();
 
     private static boolean working;
     /**
@@ -200,20 +224,28 @@ public class Receiver {
     }
 
     public static void main(String[] args) {
-        working = false;                                    //映射建立完毕前暂停工作以避免NullPointerException
-        friendList = client.getFriendList();                //获取好友列表
-        groupList = client.getGroupList();                  //获取群列表
-        discussList = client.getDiscussList();              //获取讨论组列表
-        for (Friend friend : friendList) {                  //建立好友id到好友映射
+        //映射建立完毕前暂停工作以避免NullPointerException
+        working = false;
+        //获取好友列表
+        friendList = client.getFriendList();
+        //获取群列表
+        groupList = client.getGroupList();
+        //获取讨论组列表
+        discussList = client.getDiscussList();
+        //建立好友id到好友映射
+        for (Friend friend : friendList) {
             friendFromID.put(friend.getUserId(), friend);
         }
-        for (Group group : groupList) {                     //建立群id到群映射
+        //建立群id到群映射
+        for (Group group : groupList) {
             groupFromID.put(group.getId(), group);
         }
-        for (Discuss discuss : discussList) {               //建立讨论组id到讨论组映射
+        //建立讨论组id到讨论组映射
+        for (Discuss discuss : discussList) {
             discussFromID.put(discuss.getId(), discuss);
         }
-        working = true;                                     //映射建立完毕后恢复工作
+        //映射建立完毕后恢复工作
+        working = true;
         //为防止请求过多导致服务器启动自我保护
         //群id到群详情映射 和 讨论组id到讨论组详情映射 将在第一次请求时创建
         //TODO: 可考虑在出现第一条讨论组消息时再建立相关映射，以防Api错误返回

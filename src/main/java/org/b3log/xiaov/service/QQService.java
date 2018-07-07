@@ -105,6 +105,15 @@ public class QQService {
     }
 
     /**
+     * 说话闭嘴标记
+     */
+    private static boolean isSay = true;
+
+    /**
+     * 用于发送消息
+     */
+    private static StringBuffer msg = new StringBuffer();
+    /**
      * QQ groups.
      * &lt;groupId, group&gt;
      */
@@ -390,10 +399,40 @@ public class QQService {
     }
 
     private void onQQGroupMessage(final GroupMessage message) {
-        final long groupId = message.getGroupId();
 
+        msg.setLength(0);
+        final long groupId = message.getGroupId();
+        String[] responseGroups = StringUtils.split(XiaoVs.getString("qq.bot.responseGroups"), "/");
+        responseGroups = Strings.trimAll(responseGroups);
+        boolean flg = false;
+        for (final String response : responseGroups) {
+            Group group = QQ_GROUPS.get(groupId);
+            if (StringUtils.equals(group.getName(), response)) {
+                flg = true;
+                break;
+            }
+        }
+        if (!flg) {
+            return;
+        }
         final String content = message.getContent();
         final String userName = Long.toHexString(message.getUserId());
+
+        if (StringUtils.equals(content, "闭嘴")) {
+            isSay = false;
+            msg.append("你让我闭嘴，我就闭嘴好了");
+            sendMessageToGroup(groupId, msg.toString());
+            return;
+        }
+        if (StringUtils.equals(content, "说话")) {
+            isSay = true;
+            msg.append("这个群本来就允许我说话的啊");
+            sendMessageToGroup(groupId, msg.toString());
+            return;
+        }
+        if (!isSay) {
+            return;
+        }
         // Push to third system
         String qqMsg = content.replaceAll("\\[\"face\",[0-9]+\\]", "");
         if (StringUtils.isNotBlank(qqMsg)) {
@@ -401,14 +440,15 @@ public class QQService {
             sendToThird(qqMsg, userName);
         }
 
-        String msg = "";
-        if (StringUtils.contains(content, XiaoVs.QQ_BOT_NAME)
-                || (StringUtils.length(content) > 6
-                && (StringUtils.contains(content, "?") || StringUtils.contains(content, "？") || StringUtils.contains(content, "问")))) {
-            msg = answer(content, userName);
-        }
 
-        if (StringUtils.isBlank(msg)) {
+     /*   if (StringUtils.contains(content, XiaoVs.QQ_BOT_NAME)
+                || (StringUtils.length(content) > 6
+                && (StringUtils.contains(content, "?") || StringUtils.contains(content, "？") || StringUtils.contains(content, "问")))) {*/
+        msg.setLength(0);
+        msg.append(answer(content, userName));
+     /*   }*/
+
+        if (StringUtils.isBlank(msg.toString())) {
             return;
         }
 
@@ -421,13 +461,13 @@ public class QQService {
             final long now = System.currentTimeMillis();
 
             if (now - latestAdTime > 1000 * 60 * 30) {
-                msg = msg + "。\n" + ADS.get(RandomUtils.nextInt(ADS.size()));
+                msg.append("。\n").append(ADS.get(RandomUtils.nextInt(ADS.size())));
 
                 GROUP_AD_TIME.put(groupId, now);
             }
         }
 
-        sendMessageToGroup(groupId, msg);
+        sendMessageToGroup(groupId, msg.toString());
     }
 
     private void onQQDiscussMessage(final DiscussMessage message) {
@@ -492,6 +532,7 @@ public class QQService {
     }
 
     private String answer(final String content, final String userName) {
+
         String keyword = "";
         String[] keywords = StringUtils.split(XiaoVs.getString("bot.follow.keywords"), ",");
         keywords = Strings.trimAll(keywords);
@@ -506,13 +547,8 @@ public class QQService {
         String ret = "";
         String msg = replaceBotName(content);
         if (StringUtils.isNotBlank(keyword)) {
-            try {
-                ret = XiaoVs.getString("bot.follow.keywordAnswer");
-                ret = StringUtils.replace(ret, "{keyword}",
-                        URLEncoder.encode(keyword, "UTF-8"));
-            } catch (final UnsupportedEncodingException e) {
-                LOGGER.log(Level.ERROR, "Search key encoding failed", e);
-            }
+            ret = XiaoVs.getString("bot.follow.keywordAnswer");
+
         } else if (StringUtils.contains(content, XiaoVs.QQ_BOT_NAME) && StringUtils.isNotBlank(msg)) {
             if (1 == QQ_BOT_TYPE && StringUtils.isNotBlank(userName)) {
                 ret = turingQueryService.chat(userName, msg);
